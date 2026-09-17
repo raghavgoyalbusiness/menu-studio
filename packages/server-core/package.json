@@ -1,0 +1,26 @@
+{
+  "name": "@menu-studio/server-core",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./testing": "./src/testing/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@aws-sdk/client-cloudfront": "^3.1134.0",
+    "@aws-sdk/client-s3": "^3.1134.0",
+    "@menu-studio/shared": "workspace:*",
+    "@supabase/supabase-js": "^2.116.0",
+    "pg": "^8.23.0",
+    "pg-boss": "^12.33.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.23.1",
+    "embedded-postgres": "^18.4.0-beta.17"
+  }
+}

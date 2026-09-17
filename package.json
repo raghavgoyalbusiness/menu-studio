@@ -1,0 +1,39 @@
+{
+  "name": "menu-studio",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.18.0",
+  "engines": {
+    "node": ">=24.11.0"
+  },
+  "scripts": {
+    "dev": "turbo run dev --concurrency 20",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "lint": "eslint . --max-warnings 0",
+    "test": "turbo run test --concurrency 2",
+    "check": "pnpm typecheck && pnpm lint && pnpm test",
+    "e2e": "playwright test",
+    "db:start": "node scripts/db/start.ts",
+    "db:migrate": "node scripts/db/migrate.ts",
+    "db:seed": "node scripts/db/seed.ts",
+    "db:reset": "node scripts/db/reset.ts",
+    "fonts:mirror": "node packages/design-system/scripts/mirror-fonts.ts",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^24.13.5",
+    "@types/pg": "^8.23.1",
+    "embedded-postgres": "^18.4.0-beta.17",
+    "eslint": "^10.10.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "pg": "^8.23.0",
+    "prettier": "^3.9.7",
+    "turbo": "^2.10.13",
+    "typescript": "6.0.3",
+    "typescript-eslint": "^8.70.0",
+    "vitest": "^5.0.1"
+  }
+}

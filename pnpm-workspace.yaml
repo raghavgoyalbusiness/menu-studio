@@ -1,0 +1,29 @@
+packages:
+  - apps/*
+  - packages/*
+  - infra
+
+allowBuilds:
+  '@embedded-postgres/darwin-arm64': true
+  '@embedded-postgres/linux-x64': true
+  '@embedded-postgres/linux-arm64': true
+
+minimumReleaseAgeExclude:
+  - '@aws-sdk/client-cloudfront@3.1134.0'
+  - '@aws-sdk/client-s3@3.1134.0'
+  - '@sentry/browser-utils@10.75.0'
+  - '@sentry/browser@10.75.0'
+  - '@sentry/core@10.75.0'
+  - '@sentry/feedback@10.75.0'
+  - '@sentry/node-core@10.75.0'
+  - '@sentry/node@10.75.0'
+  - '@sentry/opentelemetry@10.75.0'
+  - '@sentry/react@10.75.0'
+  - '@sentry/replay-canvas@10.75.0'
+  - '@sentry/replay@10.75.0'
+  - '@sentry/server-utils@10.75.0'
+  - '@tanstack/query-core@5.103.1'
+  - '@tanstack/react-query@5.103.1'
+  - aws-cdk@2.1142.0
+  - pg-boss@12.33.0
+

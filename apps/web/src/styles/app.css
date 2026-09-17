@@ -1,0 +1,134 @@
+@import "tailwindcss";
+@import "@menu-studio/design-system/app-fonts.css";
+@import "@menu-studio/design-system/fonts.css";
+@import "@menu-studio/renderer/renderer.css";
+
+@source "../../../../packages/renderer/src";
+
+@theme {
+  --font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-serif: "Instrument Serif", Georgia, "Times New Roman", serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+
+  --color-paper: #f6f4ef;
+  --color-paper-2: #efece5;
+  --color-canvas: #e6e2d9;
+  --color-card: #fbfaf7;
+  --color-ink: #1c1b19;
+  --color-ink-2: #3a3834;
+  --color-muted: #6b675f;
+  --color-faint: #9c978d;
+  --color-line: #e0dcd3;
+  --color-line-strong: #cdc8bd;
+  --color-accent: #2f4a3a;
+  --color-accent-soft: #e2e9e1;
+  --color-focus: #2563eb;
+  --color-danger: #a33a2c;
+  --color-danger-soft: #f5e3df;
+  --color-warn: #8a5d0f;
+  --color-warn-soft: #f6ecd6;
+  --color-ok: #2f6b45;
+  --color-ok-soft: #e1eee4;
+
+  --radius-xs: 3px;
+  --radius-sm: 5px;
+  --radius-md: 7px;
+  --radius-lg: 11px;
+
+  --shadow-soft: 0 1px 2px rgb(28 27 25 / 0.05), 0 8px 24px -12px rgb(28 27 25 / 0.14);
+  --shadow-float: 0 1px 2px rgb(28 27 25 / 0.06), 0 18px 48px -18px rgb(28 27 25 / 0.3);
+
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "ss01", "cv11";
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--color-accent) 22%, transparent);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+  button {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: default;
+  }
+}
+
+@layer components {
+  .display {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    line-height: 1.05;
+  }
+  .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+    font-weight: 500;
+  }
+  .hairline {
+    border-color: var(--color-line);
+  }
+  .scroll-quiet {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line-strong) transparent;
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes shimmer {
+  from {
+    background-position: -400px 0;
+  }
+  to {
+    background-position: 400px 0;
+  }
+}
+.animate-fade-up {
+  animation: fade-up 420ms var(--ease-out-soft) both;
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--color-paper-2) 0%, var(--color-card) 50%, var(--color-paper-2) 100%);
+  background-size: 800px 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-up,
+  .skeleton {
+    animation: none;
+  }
+}
+
+@media print {
+  body {
+    background: #fff;
+  }
+}

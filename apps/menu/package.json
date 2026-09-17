@@ -1,0 +1,31 @@
+{
+  "name": "@menu-studio/menu",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./server": "./dist/server/entry-server.js",
+    "./client-manifest": "./dist/client/.vite/manifest.json"
+  },
+  "scripts": {
+    "dev": "node --watch --env-file-if-exists=../../.env server.ts",
+    "build": "vite build --outDir dist/client --manifest && vite build --ssr src/entry-server.tsx --outDir dist/server",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.1.1",
+    "@menu-studio/design-system": "workspace:*",
+    "@menu-studio/i18n": "workspace:*",
+    "@menu-studio/renderer": "workspace:*",
+    "@menu-studio/shared": "workspace:*",
+    "hono": "^4.13.8",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "vite": "^8.3.0"
+  }
+}

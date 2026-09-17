@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.turbo/
+.data/
+coverage/
+playwright-report/
+test-results/
+*.log
+.DS_Store
+.env
+.env.*
+!.env.example
+cdk.out/
+packages/design-system/fonts/files/
+e2e/.artifacts/
+evals/fixtures/*
+!evals/fixtures/README.md

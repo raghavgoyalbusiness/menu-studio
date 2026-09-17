@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Menus may only use curated fonts, and they are mirrored rather than committed.
+  TURBO_TELEMETRY_DISABLED: 1
+  DO_NOT_TRACK: 1
+
+jobs:
+  check:
+    name: Typecheck, lint, unit and RLS tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # The RLS suite starts its own PostgreSQL (embedded-postgres, no Docker) and asserts that
+      # every table denies an outsider, so it needs no service container.
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm test
+
+  infra:
+    name: CDK synth
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # No AWS credentials: the stacks must synthesise environment-agnostic templates.
+      - run: pnpm --filter @menu-studio/infra synth
+        env:
+          CDK_DEFAULT_ACCOUNT: ""
+      - run: pnpm --filter @menu-studio/infra test
+
+  e2e:
+    name: End-to-end (Linux baselines)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    # The same image the visual baselines were generated in: text metrics differ between platforms.
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Mirror the curated fonts
+        run: pnpm fonts:mirror
+      - name: Build the QR menu site
+        run: pnpm --filter @menu-studio/menu build
+      - name: Run the suite
+        run: pnpm e2e
+        env:
+          CI: "1"
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: |
+            playwright-report
+            e2e/.artifacts
+          retention-days: 7

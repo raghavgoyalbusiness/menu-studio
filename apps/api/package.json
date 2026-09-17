@@ -1,0 +1,30 @@
+{
+  "name": "@menu-studio/api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch --env-file-if-exists=../../.env src/index.ts",
+    "start": "node --env-file-if-exists=../../.env src/index.ts",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "smoke:extract": "node --env-file-if-exists=../../.env scripts/smoke.ts extract",
+    "smoke:concepts": "node --env-file-if-exists=../../.env scripts/smoke.ts concepts",
+    "smoke:edit": "node --env-file-if-exists=../../.env scripts/smoke.ts edit"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.126.0",
+    "@hono/node-server": "^2.1.1",
+    "@menu-studio/design-system": "workspace:*",
+    "@menu-studio/i18n": "workspace:*",
+    "@menu-studio/server-core": "workspace:*",
+    "@menu-studio/shared": "workspace:*",
+    "@sentry/node": "^10.75.0",
+    "@supabase/supabase-js": "^2.116.0",
+    "hono": "^4.13.8",
+    "pdf-lib": "^1.17.1",
+    "razorpay": "^2.9.8",
+    "sharp": "^0.35.4",
+    "stripe": "^22.6.2",
+    "zod": "^4.6.5"
+  }
+}
