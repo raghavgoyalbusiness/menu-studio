@@ -30,7 +30,8 @@
   because each page inlines its own JSON-LD and a JSON config blob and the header is per-distribution,
   so per-page hashes are not possible. The mitigation is at the source: owner text is always rendered
   as text (`dangerouslySetInnerHTML` is banned by lint) and injected JSON is escaped.
-- LCP has not been measured on a throttled 4G profile; only the byte budget is enforced.
+- The published menu has only been measured on a local server. Real CloudFront latency will add to
+  the numbers below, though the page is small enough that it should stay well inside budget.
 
 ## Verified
 
@@ -38,3 +39,9 @@
 items are in the server-rendered HTML, the search island filters and shows an empty state, the page
 declares its language and JSON-LD, there are no console errors, and JS + CSS together stay under
 60 KB uncompressed.
+
+`e2e/qr-performance.spec.ts` throttles the browser to 4 Mbps with 70 ms latency and a 4x CPU
+slowdown — a mid-range phone on a restaurant's 4G — and measures **LCP 1104 ms, FCP 1088 ms over 8
+requests**, against a 2.5 s threshold. A second test aborts every script request and confirms the
+menu still renders in full: the islands are an enhancement, and a diner whose JavaScript never
+arrives still gets the menu.

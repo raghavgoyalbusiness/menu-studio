@@ -34,10 +34,10 @@ export default defineConfig({
     screenshot: "only-on-failure",
   },
   projects: [
-    { name: "owner", use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } }, testIgnore: /qr-menu\.spec\.ts/ },
+    { name: "owner", use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } }, testIgnore: /qr-(menu|performance)\.spec\.ts/ },
     // A phone-sized Chromium. For real iOS Safari coverage add a WebKit project after
     // `pnpm exec playwright install webkit`; the CI image already carries it.
-    { name: "diner", use: { ...devices["Pixel 7"] }, testMatch: /qr-menu\.spec\.ts/ },
+    { name: "diner", use: { ...devices["Pixel 7"] }, testMatch: /qr-(menu|performance)\.spec\.ts/ },
   ],
   webServer: [
     { command: "pnpm db:start", port: Number(process.env.LOCAL_DB_PORT ?? 54329), reuseExistingServer: true, timeout: 120_000, stdout: "pipe" },

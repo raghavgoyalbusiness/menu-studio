@@ -1,5 +1,9 @@
 import { expect, test } from "@playwright/test";
+import { existsSync, readdirSync } from "node:fs";
 import { apiGet, signIn, type ProjectSummary } from "./helpers.ts";
+
+const BASELINES = new URL("baselines/visual.spec.ts/", import.meta.url).pathname;
+const hasBaselines = existsSync(BASELINES) && readdirSync(BASELINES).some((f) => f.endsWith(".png"));
 
 /**
  * Renderer snapshots. Text metrics differ between macOS and Linux, so baselines are generated
@@ -8,6 +12,9 @@ import { apiGet, signIn, type ProjectSummary } from "./helpers.ts";
  */
 test.describe("renderer appearance", () => {
   test.skip(process.platform !== "linux", "Visual baselines are Linux-only; see docs/RUNBOOK.md");
+  // First run in a new checkout: there is nothing to compare against yet. Generating baselines is a
+  // deliberate act (`pnpm e2e --update-snapshots` on Linux), not something a green CI run implies.
+  test.skip(!hasBaselines, "No baselines committed yet; generate them with pnpm e2e --update-snapshots on Linux");
   test.slow();
 
   test("each seeded menu matches its baseline", async ({ page }) => {

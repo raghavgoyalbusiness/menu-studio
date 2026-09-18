@@ -125,15 +125,21 @@ pnpm db:reset      # drop, migrate, reseed
 
 ### Regenerate visual baselines
 
-Baselines are Linux-only because text metrics differ per platform. Generate them in the same image
-CI uses:
+Baselines are Linux-only because text metrics differ per platform, and none are committed yet: the
+visual test skips itself until they exist, so a green run does not silently mean "no visual
+regressions". Generate them on Linux — most simply by running the `e2e` CI job against a branch with
+`pnpm e2e --update-snapshots` — and commit the PNGs under `e2e/baselines/`.
+
+Locally, on a Linux machine:
 
 ```bash
-docker run --rm -it -v "$PWD":/w -w /w mcr.microsoft.com/playwright:v1.63.0-noble \
-  bash -c "corepack enable && pnpm install --frozen-lockfile && pnpm fonts:mirror && pnpm e2e --update-snapshots"
+pnpm install --frozen-lockfile && pnpm fonts:mirror
+pnpm --filter @menu-studio/menu build
+pnpm e2e --update-snapshots
 ```
 
-The visual project skips itself anywhere else, so a macOS run is not a false pass.
+Do not generate them in the Playwright docker image: that container runs as root, and the embedded
+PostgreSQL the suite needs refuses to `initdb` as root. Use a normal user account.
 
 ### Run the extraction eval
 

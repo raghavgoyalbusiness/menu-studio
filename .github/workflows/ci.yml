@@ -52,13 +52,12 @@ jobs:
       - run: pnpm --filter @menu-studio/infra test
 
   e2e:
-    name: End-to-end (Linux baselines)
+    name: End-to-end
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    # The same image the visual baselines were generated in: text metrics differ between platforms.
-    container:
-      image: mcr.microsoft.com/playwright:v1.63.0-noble
-      options: --ipc=host
+    # Deliberately not the Playwright container: the local database runs as a real PostgreSQL
+    # through embedded-postgres, and initdb refuses to run as root, which is what a container job
+    # is. The runner gives us a normal user and the same Linux text metrics.
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
@@ -67,6 +66,8 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
       - name: Mirror the curated fonts
         run: pnpm fonts:mirror
       - name: Build the QR menu site

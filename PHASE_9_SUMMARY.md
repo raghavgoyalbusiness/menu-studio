@@ -14,14 +14,15 @@
   - Worker is Fargate with no load balancer, more memory for Chromium, a 1 GB shared-memory segment,
     write access to the menu bucket, CloudFront invalidation rights scoped to the one distribution,
     and an alarm when no task is running.
-- **CI/CD**: `ci.yml` (typecheck, lint, unit and RLS tests, `cdk synth`, Playwright in the Linux
-  image), `deploy-staging.yml` (push to `main`) and `deploy-production.yml` (a published release or a
-  manual run, gated on a reviewer). Both deploys use OIDC — there are no AWS keys in the repository.
+- **CI/CD**: `ci.yml` (typecheck, lint, unit and RLS tests, `cdk synth`, and the Playwright suite),
+  `deploy-staging.yml` (push to `main`) and `deploy-production.yml` (a published release or a manual
+  run, gated on a reviewer). Both deploys use OIDC — there are no AWS keys in the repository.
 - **Dockerfiles** for the API (`node:24-slim`, TypeScript run directly) and the worker (the Playwright
   image, with fonts mirrored and the QR site built at image-build time).
-- **`e2e/`**: 13 Playwright tests — the owner happy path, print geometry against the real exported
-  PDF bytes, the published QR menu on a phone, and renderer visual baselines (Linux-only, skipped
-  elsewhere so a macOS run cannot be a false pass).
+- **`e2e/`**: 15 Playwright tests — the owner happy path, print geometry against the real exported
+  PDF bytes, the published QR menu on a phone, its performance under throttled 4G, and renderer
+  visual baselines (Linux-only, and skipped until baselines exist so a green run never implies
+  visual coverage it does not have).
 - **`evals/extract-eval.ts`**: item recall, invented items, price accuracy, false inference rate and
   section recall against private fixtures, with thresholds that make it usable as a CI gate.
 - **Docs**: `README.md`, `docs/ARCHITECTURE.md`, `docs/RUNBOOK.md`, `.env.example` documenting every
@@ -42,10 +43,14 @@ credentials and no API keys:
 - The GitHub workflows have never run.
 - The AI endpoints have never called the live model; the eval harness has no fixtures here.
 - Billing has never talked to Stripe or Razorpay.
-- QR menu LCP has not been measured on a throttled 4G profile — only the byte budget is enforced.
 
 ## Verified
 
 `pnpm check` is green: 193 unit and RLS tests across 10 packages, typecheck and lint clean.
-`pnpm e2e` is green: 12 passed, 1 skipped (the Linux-only visual project). `cdk synth` produces five
-templates for staging and for production with no AWS account configured.
+`pnpm e2e` is green: 14 passed, 1 skipped (the visual project, which has no baselines yet).
+`cdk synth` produces five templates for staging and for production with no AWS account configured.
+
+Measured on a phone-sized Chromium throttled to 4 Mbps with 70 ms latency and a 4x CPU slowdown, the
+published QR menu reaches **LCP 1104 ms and FCP 1088 ms over 8 requests** — comfortably inside the
+2.5 s threshold the test enforces. A second test blocks every script and confirms the menu is still
+fully readable: the islands are an enhancement, not the page.

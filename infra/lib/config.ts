@@ -45,8 +45,10 @@ function domainFromContext(value: unknown): DomainConfig | undefined {
 }
 
 export function environmentConfig(name: EnvironmentName, context: (key: string) => unknown): EnvironmentConfig {
-  const region = (context(`${name}:region`) as string | undefined) ?? DEFAULT_REGION;
-  const account = (context(`${name}:account`) as string | undefined) ?? process.env.CDK_DEFAULT_ACCOUNT;
+  const region = (context(`${name}:region`) as string | undefined) || DEFAULT_REGION;
+  // An empty string is "no account" — CI synthesises environment-agnostic templates with no
+  // credentials, and passing "" as an account makes CloudFormation lookups fail confusingly.
+  const account = ((context(`${name}:account`) as string | undefined) || process.env.CDK_DEFAULT_ACCOUNT) || undefined;
   const domain = domainFromContext(context(`${name}:domain`));
   const production = name === "production";
   return {
