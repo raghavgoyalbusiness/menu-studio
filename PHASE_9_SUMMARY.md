@@ -46,7 +46,10 @@ credentials and no API keys:
 
 ## Verified
 
-`pnpm check` is green: 193 unit and RLS tests across 10 packages, typecheck and lint clean.
+`pnpm check` is green: 201 unit and RLS tests across 10 packages, typecheck and lint clean. That
+includes eight new tests on the published menu's HTML, which render a menu whose every text field is
+an injection attempt and assert it comes back as text: escaped in the markup React renders, and
+unicode-escaped inside the hand-built JSON-LD and config blobs.
 `pnpm e2e` is green: 14 passed, 1 skipped (the visual project, which has no baselines yet).
 `cdk synth` produces five templates for staging and for production with no AWS account configured.
 

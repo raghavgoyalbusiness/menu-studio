@@ -10,8 +10,8 @@ Full spec: the Full Build Spec (in conversation). Plan: [PLAN.md](PLAN.md).
 
 ## Status
 
-All nine phases are built. `pnpm check` and `pnpm e2e` are green: 193 unit and RLS tests, 12 e2e
-tests (1 skipped — the visual project only runs on Linux).
+All nine phases are built. `pnpm check` and `pnpm e2e` are green: 201 unit and RLS tests, and 14 e2e
+tests (1 skipped — the visual project runs only on Linux, and only once baselines exist).
 
 | Phase | State | Summary |
 |---|---|---|
