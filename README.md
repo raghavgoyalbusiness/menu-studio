@@ -1,8 +1,9 @@
 # Menu Studio
 
-An AI menu design platform for restaurants, cafes and bars. An owner uploads the menu they already
-have, answers a short brief, picks one of three design concepts, refines it by chat and by dragging
-things around, then exports print-ready PDFs and publishes a QR menu that stays in sync.
+An AI menu design platform for restaurants, cafes and bars. An owner brings the menu they already
+have — a photo, a PDF, pasted text — or describes the place and gets one drafted. They answer a
+short brief, pick one of three design concepts, refine it by chat and by dragging things around,
+then export print-ready PDFs and publish a QR menu that stays in sync.
 
 The rule the whole system is built around: **the model never writes HTML, CSS or SVG.** It returns
 JSON, that JSON is validated with Zod, and a deterministic React renderer draws it. The same
@@ -22,6 +23,10 @@ pnpm dev              # web :5223, QR site :5224, api :5323, worker
 
 Then open http://127.0.0.1:5223 and sign in as `demo@menu-studio.local` — local auth is
 passwordless and the sign-in page shows the link.
+
+To look around without signing in: **http://127.0.0.1:5223/dev/renderer** is the renderer gallery
+(any seed menu × any of the ten archetypes × any paper format), and a published QR menu is served
+straight from http://127.0.0.1:5224.
 
 Without `ANTHROPIC_API_KEY` everything works except the AI routes, which return a clear 503: the
 sample menus, the editor, exports and publishing are all usable.
@@ -72,5 +77,6 @@ supabase/    Migrations, the local shim and RLS policies
 
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — how the pieces fit, and why they are shaped that way.
 - [docs/RUNBOOK.md](docs/RUNBOOK.md) — deploying, and what to do when something breaks.
+- [PHASE_10_SUMMARY.md](PHASE_10_SUMMARY.md) — drafting a menu from a description, and brand colours.
 - [CLAUDE.md](CLAUDE.md) — the working rules for changing this codebase.
 - [PLAN.md](PLAN.md) — the build plan and the decisions taken along the way.

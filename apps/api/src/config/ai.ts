@@ -11,7 +11,7 @@ export const AI_FALLBACKS = { beta: "server-side-fallback-2026-07-01", mode: "de
 
 export type Effort = "low" | "medium" | "high" | "xhigh" | "max";
 
-export type AiEndpoint = "extract" | "concepts" | "edit" | "translate" | "engineering" | "describe_reference";
+export type AiEndpoint = "extract" | "draft" | "concepts" | "edit" | "translate" | "engineering" | "describe_reference";
 
 export interface EndpointSettings {
   effort: Effort;
@@ -23,6 +23,9 @@ export interface EndpointSettings {
 
 export const ENDPOINTS: Record<AiEndpoint, EndpointSettings> = {
   extract: { effort: "high", maxTokens: 48_000, timeoutMs: 240_000, rateLimit: { calls: 30, windowSeconds: 3600 } },
+  // Drafting is cheaper than extraction — no images, and no prices to cross-check — but it is
+  // rate-limited harder, because a fresh draft is a thing to iterate on, not to spam.
+  draft: { effort: "high", maxTokens: 24_000, timeoutMs: 180_000, rateLimit: { calls: 20, windowSeconds: 3600 } },
   concepts: { effort: "high", maxTokens: 48_000, timeoutMs: 240_000, rateLimit: { calls: 30, windowSeconds: 3600 } },
   edit: { effort: "medium", maxTokens: 16_000, timeoutMs: 120_000, rateLimit: { calls: 120, windowSeconds: 3600 } },
   translate: { effort: "medium", maxTokens: 48_000, timeoutMs: 240_000, rateLimit: { calls: 20, windowSeconds: 3600 } },

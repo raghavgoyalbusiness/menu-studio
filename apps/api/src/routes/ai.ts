@@ -34,6 +34,7 @@ import {
   type ArchetypeId,
   type ConceptsResponse,
   type DescribeReferenceResponse,
+  type DraftResponse,
   type Edit,
   type EditResponse,
   type EngineeringResponse,
@@ -45,10 +46,12 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { conceptsUserText, ConceptsWire, convertConcepts } from "../ai-wire/concepts.ts";
 import { convertEdit, editUserText, EditWire } from "../ai-wire/edit.ts";
+import { convertDraft, DraftWire, type DraftResult } from "../ai-wire/draft.ts";
 import { convertExtraction, ExtractWire, type ExtractResult } from "../ai-wire/extract.ts";
 import { convertEngineering, convertTranslation, DescribeWire, engineeringUserText, EngineeringWire, fontWarningFor, translateUserText, TranslateWire } from "../ai-wire/others.ts";
 import type { AppDeps, AppEnv } from "../deps.ts";
 import { jsonBody, param } from "../middleware/core.ts";
+import { draftInstruction } from "../prompts/draft/v1.ts";
 import { extractInstruction } from "../prompts/extract/v1.ts";
 import { PROMPTS } from "../prompts/index.ts";
 import { requireOrg, requireProject } from "../services/access.ts";
@@ -143,6 +146,60 @@ export function aiRoutes(deps: AppDeps) {
       }),
     );
     const response: ExtractResponse = { version, warnings: result.value.warnings };
+    return c.json(response, 201);
+  });
+
+  /**
+   * Draft a starting menu from a description. This is the one endpoint where the model proposes
+   * content instead of reading it, so the guardrails are stronger: no price can come back (the
+   * wire has no price field, and an amount smuggled into text is rejected in `convertDraft`), and
+   * every field it produced is marked inferred, so the review screen makes the owner confirm each
+   * one before it can reach a printed or published menu.
+   */
+  app.post("/draft", async (c) => {
+    const body = await jsonBody(
+      c,
+      z.object({
+        projectId: z.string().uuid(),
+        description: z.string().trim().min(15, "Describe the place in a sentence or two so the draft is worth editing.").max(2000),
+      }),
+    );
+    const user = c.get("user");
+    const logger = c.get("logger");
+    const { ctx, head } = await deps.db.asUser(user, async (q) => ({ ctx: await requireProject(q, body.projectId, "editor"), head: await getHead(q, body.projectId) }));
+    const result = await runStructured<DraftWire, DraftResult>(
+      { ...ai, logger },
+      {
+        endpoint: "draft",
+        prompt: PROMPTS.draft,
+        content: [
+          {
+            type: "text",
+            text: draftInstruction(
+              { venueName: ctx.venue.name, venueType: ctx.venue.venueType, country: ctx.venue.country, currency: ctx.venue.currency, city: ctx.venue.city },
+              body.description,
+            ),
+          },
+        ],
+        wire: DraftWire,
+        convert: (wire) => convertDraft(wire, { projectId: body.projectId, venueName: ctx.venue.name, currency: ctx.venue.currency, locale: ctx.venue.locale, description: body.description }),
+        meter: meter(c, ctx.org.id, body.projectId),
+      },
+    );
+    const itemCount = result.value.document.sections.reduce((n, s) => n + s.items.length, 0);
+    const version = await deps.db.asUser(user, (q) =>
+      insertVersion(q, {
+        projectId: body.projectId,
+        baseVersionId: head?.id ?? null,
+        document: result.value.document,
+        brief: head?.brief ?? defaultBrief({ format: ctx.venue.country === "US" ? "US_LETTER" : "A4" }),
+        spec: null,
+        source: "import",
+        summary: `Drafted ${itemCount} items from a description`,
+        createdBy: user.sub,
+      }),
+    );
+    const response: DraftResponse = { version, warnings: result.value.warnings, notes: result.value.notes };
     return c.json(response, 201);
   });
 

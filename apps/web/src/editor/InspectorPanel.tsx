@@ -15,6 +15,7 @@ import {
 import type { ReactNode } from "react";
 import { IconLock, IconRefresh, IconUnlock } from "../components/icons.tsx";
 import { Button, cx, Segmented, Select, Slider } from "../components/ui.tsx";
+import { BrandPalette } from "./BrandPalette.tsx";
 import { useEditor } from "../stores/editor.ts";
 import { moveBlockBy, moveMatrixItem, resetMatrixItem, setBlockEmphasis, setBlockOverride, setMatrixLock, setToken, switchArchetype } from "./spec-edits.ts";
 
@@ -160,6 +161,10 @@ export function InspectorPanel() {
             );
           })}
         </div>
+      </Group>
+
+      <Group title="Your brand colours">
+        <BrandPalette spec={spec} />
       </Group>
 
       <Group title="Details">

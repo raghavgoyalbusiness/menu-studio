@@ -10,8 +10,10 @@ Full spec: the Full Build Spec (in conversation). Plan: [PLAN.md](PLAN.md).
 
 ## Status
 
-All nine phases are built. `pnpm check` and `pnpm e2e` are green: 201 unit and RLS tests, and 14 e2e
-tests (1 skipped — the visual project runs only on Linux, and only once baselines exist).
+All nine phases are built, plus three features added after the spec: drafting a menu from a
+description (`POST /draft`), the owner's own brand colours, and the no-auth renderer gallery at
+`/dev/renderer`. `pnpm check` and `pnpm e2e` are green: 215 unit and RLS tests, and 14 e2e tests
+(1 skipped — the visual project runs only on Linux, and only once baselines exist).
 
 | Phase | State | Summary |
 |---|---|---|
@@ -75,6 +77,7 @@ Env: every variable is documented in `.env.example`. Each app parses its env wit
   - `config/ai.ts`: the **only** place the model id lives
   - `services/anthropic.ts`: `runStructured()`
   - `prompts/<name>/vN.ts`: versioned prompts
+  - `/draft`: describe a venue, get a starting menu — suggestions only, never priced
   - `ai-wire/`: structured-output wire schemas ⇄ domain
 - `apps/worker`: pg-boss consumer with jobs `export`, `publish`, `bulk_export`. Runs Playwright.
 - `packages/shared`: Zod schemas (source of truth for types), `money.ts`, `formats.ts`, `archetypes.ts` (registry metadata), `patch/` (`applyEdit`), `engineering/`, `billing/plans.ts`, `seeds/`.
@@ -151,8 +154,8 @@ Env: every variable is documented in `.env.example`. Each app parses its env wit
 ## Never do
 
 - Never let the LLM produce HTML, CSS or SVG, or skip Zod validation on AI output or webhook payloads.
-- Never invent menu items, prices or descriptions. Never generate AI food photography.
-- Never use a font outside the curated list in a menu. Never load Google Fonts' CDN at runtime.
+- Never invent menu items, prices or descriptions **when reading a menu the owner already has**. `/draft` is the one endpoint that proposes content, and only because the owner explicitly asked for a draft: it cannot return a price (there is no price field, and an amount in a name or description is rejected in code), and every field it produces is marked inferred so the review screen makes the owner confirm it. Never generate AI food photography.
+- Never use a font outside the curated list in a menu. Never load Google Fonts' CDN at runtime. Colour is different: `tokens.customPalette` lets the owner set their own brand colours, and the schema enforces AA contrast on body text, so an unreadable palette cannot be saved.
 - Never use float math for money.
 - Never expose the service-role key to `apps/web` or `apps/menu`, or to any client bundle.
 - Never remove an item because of menu engineering; emphasis only.

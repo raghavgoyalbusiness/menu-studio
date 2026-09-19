@@ -346,6 +346,21 @@ export function Review() {
       return [];
     }
   });
+  // A drafted menu is suggestions, not a reading of something real, and it says so louder.
+  const [drafted] = useState(() => {
+    try {
+      return sessionStorage.getItem(`menu-studio.drafted.${projectId}`) === "1";
+    } catch {
+      return false;
+    }
+  });
+  const [notes] = useState<string[]>(() => {
+    try {
+      return JSON.parse(sessionStorage.getItem(`menu-studio.notes.${projectId}`) ?? "[]") as string[];
+    } catch {
+      return [];
+    }
+  });
 
   useEffect(() => {
     if (project.data?.head) load(projectId, project.data.head);
@@ -414,7 +429,23 @@ export function Review() {
           <ErrorNotice error={new Error(error)} onRetry={clearError} />
         </div>
       ) : null}
-      {warnings.length ? (
+      {drafted ? (
+        <Notice className="mb-6">
+          <div className="mb-1 font-medium">This is a draft, not your menu</div>
+          <p>
+            Every dish below was suggested from your description and is marked as a guess. Keep the ones you actually cook, bin the rest, and add your
+            prices — nothing was priced for you.
+          </p>
+          {notes.length ? (
+            <ul className="mt-2 list-disc space-y-0.5 pl-5">
+              {notes.slice(0, 6).map((note, i) => (
+                <li key={i}>{note}</li>
+              ))}
+            </ul>
+          ) : null}
+        </Notice>
+      ) : null}
+      {warnings.length && !drafted ? (
         <Notice tone="warn" className="mb-6">
           <div className="mb-1 font-medium">Worth a look</div>
           <ul className="list-disc space-y-0.5 pl-5">

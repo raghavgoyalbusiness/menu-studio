@@ -174,6 +174,20 @@ export interface ExtractResponse {
   warnings: ExtractionWarning[];
 }
 
+export interface DraftRequest {
+  projectId: string;
+  /** The owner's description of their venue, in their own words. */
+  description: string;
+}
+
+export interface DraftResponse {
+  version: VersionDto;
+  /** One per drafted item: nothing comes back priced. */
+  warnings: ExtractionWarning[];
+  /** What the model wants the owner to decide, in plain words. */
+  notes: string[];
+}
+
 export interface ConceptsResponse {
   batchId: string;
   concepts: ConceptDto[];

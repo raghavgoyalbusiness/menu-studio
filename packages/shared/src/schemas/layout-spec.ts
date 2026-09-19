@@ -4,6 +4,7 @@ import {
   FONT_PAIRING_IDS,
   ORNAMENT_STYLES,
   PALETTE_IDS,
+  isHexColor,
   paletteContrastIssues,
 } from "@menu-studio/design-system/catalog";
 import { FormatId } from "../formats.ts";
@@ -171,8 +172,12 @@ export const Tokens = z
     bodyScale: z.number().min(0.8).max(1.25),
   })
   .superRefine((tokens, ctx) => {
-    if (!tokens.customPalette) return;
-    const issues = paletteContrastIssues(tokens.customPalette, { accentForText: false, accent2ForText: false });
+    const palette = tokens.customPalette;
+    if (!palette) return;
+    // Zod 4 runs refinements even when an inner field already failed, and the contrast maths
+    // throws on a malformed hex. Each bad colour reports its own regex issue; leave it at that.
+    if (!Object.values(palette).every((colour) => isHexColor(colour))) return;
+    const issues = paletteContrastIssues(palette, { accentForText: false, accent2ForText: false });
     for (const issue of issues) {
       ctx.addIssue({
         code: "custom",

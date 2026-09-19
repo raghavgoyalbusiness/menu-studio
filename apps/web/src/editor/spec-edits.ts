@@ -26,6 +26,15 @@ export function setToken<K extends keyof Tokens>(spec: LayoutSpec, key: K, value
   return { target: "spec", ops: [{ op: key in spec.tokens ? "replace" : "add", path: `/tokens/${key}`, value }] };
 }
 
+/**
+ * Drop an optional token. `setToken` cannot express this: a JSON Patch `replace` with an undefined
+ * value serialises to an op with no `value` at all, which fails validation rather than removing it.
+ */
+export function clearToken(spec: LayoutSpec, key: "customPalette"): Edit | null {
+  if (!(key in spec.tokens)) return null;
+  return { target: "spec", ops: [{ op: "remove", path: `/tokens/${key}` }] };
+}
+
 export function setBlockEmphasis(spec: LayoutSpec, blockId: string, emphasis: Emphasis): Edit | null {
   const found = blockPath(spec, blockId);
   if (!found || found.block.emphasis === emphasis) return null;

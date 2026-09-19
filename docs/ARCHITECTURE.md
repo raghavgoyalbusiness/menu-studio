@@ -9,11 +9,15 @@ A menu is a legal document as much as a design: prices, allergens and dietary ma
 exactly what the venue wrote, and the printed result has to be the right physical size. Both of
 those fight against the obvious way to use a language model, which is to let it write markup.
 
-So the model is confined to two jobs:
+So the model is confined to three jobs:
 
 1. **Reading** a menu into structured JSON (`MenuDocument`).
 2. **Choosing** from a closed set of design options (`LayoutSpec`), or proposing JSON Patch
    operations against one of those two documents.
+3. **Drafting** a starting menu when the owner has none and asks for one — and only then. That
+   endpoint cannot return a price, and everything it writes is marked as a guess the owner has to
+   confirm. See [PHASE_10_SUMMARY.md](../PHASE_10_SUMMARY.md) for why that is a narrowing of the
+   "never invent" rule rather than a hole in it.
 
 Everything visual is code.
 

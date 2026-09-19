@@ -1,13 +1,21 @@
-import type { ExtractResponse, ProjectDetailDto, UploadDto } from "@menu-studio/shared";
+import type { DraftResponse, ExtractResponse, ProjectDetailDto, UploadDto } from "@menu-studio/shared";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState, type DragEvent } from "react";
 import { useNavigate, useParams } from "react-router";
-import { IconCamera, IconFile, IconText, IconUpload, IconX } from "../../components/icons.tsx";
+import { IconCamera, IconFile, IconSparkle, IconText, IconUpload, IconX } from "../../components/icons.tsx";
 import { Button, Card, cx, ErrorNotice, Field, Input, PageHeader, ProgressSteps, Tab, TabList, TabPanel, Tabs, Textarea, useElapsed } from "../../components/ui.tsx";
 import { api } from "../../lib/api.ts";
 import { keys, useMe, useSeeds } from "../../lib/queries.ts";
 
 const EXTRACT_STEPS = ["Uploading your menu", "Reading every section", "Matching prices and variants", "Checking dietary marks", "Tidying up the details"];
+const DRAFT_STEPS = ["Reading your description", "Choosing the sections", "Writing the dishes", "Leaving every price blank", "Marking what to check"];
+
+const DESCRIBE_EXAMPLES = [
+  { label: "Neighbourhood trattoria", text: "A small neighbourhood trattoria in Leeds. Handmade pasta, four or five antipasti, three secondi, and a short list of Italian desserts. Nothing fussy." },
+  { label: "Specialty coffee shop", text: "A specialty coffee shop. Single-origin espresso and filter, a few milk drinks, matcha, and a small food menu of toasties and pastries." },
+  { label: "Cocktail bar", text: "A dimly lit cocktail bar with about twelve signature drinks, half of them stirred and spirit-forward, plus four zero-proof options and some bar snacks." },
+  { label: "South Indian canteen", text: "A South Indian vegetarian canteen in Bengaluru. Dosas, idli and vada in the mornings, full meals at lunch, filter coffee all day." },
+];
 
 export function NewProject() {
   const { venueId = "" } = useParams();
@@ -18,6 +26,7 @@ export function NewProject() {
   const [name, setName] = useState("Main menu");
   const [files, setFiles] = useState<File[]>([]);
   const [text, setText] = useState("");
+  const [description, setDescription] = useState("");
   const [tab, setTab] = useState("upload");
   const inputRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
@@ -61,6 +70,22 @@ export function NewProject() {
     },
   });
 
+  const draftMenu = useMutation({
+    mutationFn: async () => {
+      const created = await api<ProjectDetailDto>("/projects", { method: "POST", body: { venueId, name, start: { kind: "import" } } });
+      const projectId = created.project.id;
+      const result = await api<DraftResponse>("/draft", { method: "POST", body: { projectId, description } });
+      sessionStorage.setItem(`menu-studio.warnings.${projectId}`, JSON.stringify(result.warnings));
+      sessionStorage.setItem(`menu-studio.notes.${projectId}`, JSON.stringify(result.notes));
+      sessionStorage.setItem(`menu-studio.drafted.${projectId}`, "1");
+      return projectId;
+    },
+    onSuccess: async (projectId) => {
+      await queryClient.invalidateQueries({ queryKey: keys.projects() });
+      void navigate(`/projects/${projectId}/review`);
+    },
+  });
+
   const startFrom = useMutation({
     mutationFn: (start: { kind: "seed"; seedId: string } | { kind: "blank" }) => api<ProjectDetailDto>("/projects", { method: "POST", body: { venueId, name, start } }),
     onSuccess: async (detail) => {
@@ -70,6 +95,7 @@ export function NewProject() {
   });
 
   const elapsed = useElapsed(importMenu.isPending);
+  const draftElapsed = useElapsed(draftMenu.isPending);
   const onDrop = (event: DragEvent) => {
     event.preventDefault();
     addFiles(event.dataTransfer.files);
@@ -77,7 +103,11 @@ export function NewProject() {
 
   return (
     <div className="animate-fade-up">
-      <PageHeader eyebrow={venue?.name} title="Start a menu" description="Bring the menu you already have. We'll read every item and price, then you check the details before designing." />
+      <PageHeader
+        eyebrow={venue?.name}
+        title="Start a menu"
+        description="Bring the menu you already have and we'll read every item and price — or describe the place and we'll draft one. Either way you check the details before designing."
+      />
       <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
         <Card className="overflow-hidden">
           <Tabs value={tab} onValueChange={setTab}>
@@ -87,6 +117,9 @@ export function NewProject() {
               </Tab>
               <Tab value="text">
                 <IconText size={14} /> Paste text
+              </Tab>
+              <Tab value="describe">
+                <IconSparkle size={14} /> Describe it
               </Tab>
               <Tab value="samples">Sample menus</Tab>
             </TabList>
@@ -138,6 +171,36 @@ export function NewProject() {
                 </Button>
                 {importMenu.isPending ? <ProgressSteps steps={EXTRACT_STEPS.slice(1)} elapsed={elapsed} /> : null}
               </div>
+            </TabPanel>
+            <TabPanel value="describe" className="p-5">
+              <p className="mb-4 max-w-prose text-[13.5px] text-muted">
+                No menu yet? Describe the place and we'll draft one to argue with. It's a starting point, not a menu: every dish is marked as a
+                suggestion for you to keep or bin, and <span className="text-ink">nothing comes back priced</span> — you price your own food.
+              </p>
+              <Textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="min-h-44 text-[13.5px]"
+                placeholder={"A small natural wine bar in Peckham. Snacky Mediterranean plates — about eight — with a lot of veg, one thing for the table, and no dessert beyond cheese."}
+              />
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {DESCRIBE_EXAMPLES.map((example) => (
+                  <button
+                    key={example.label}
+                    className="rounded-full border border-line px-2.5 py-1 text-[12px] text-muted transition-colors hover:border-ink-2 hover:text-ink"
+                    onClick={() => setDescription(example.text)}
+                  >
+                    {example.label}
+                  </button>
+                ))}
+              </div>
+              <div className="mt-5 flex flex-wrap items-center gap-4">
+                <Button variant="primary" size="lg" disabled={description.trim().length < 15} loading={draftMenu.isPending} onClick={() => draftMenu.mutate()}>
+                  Draft my menu
+                </Button>
+                {draftMenu.isPending ? <ProgressSteps steps={DRAFT_STEPS} elapsed={draftElapsed} /> : null}
+              </div>
+              {draftMenu.error ? <ErrorNotice className="mt-4" error={draftMenu.error} onRetry={() => draftMenu.mutate()} /> : null}
             </TabPanel>
             <TabPanel value="samples" className="p-5">
               <p className="mb-4 text-[13.5px] text-muted">Explore the editor with a finished sample menu. You can replace the content later.</p>

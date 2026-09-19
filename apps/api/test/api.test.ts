@@ -1,4 +1,5 @@
-import { signPrintToken, buildDefaultSpec, type ConceptsResponse, type EditResponse, type ExtractResponse, type OrgDto, type ProjectDetailDto, type UploadDto, type VenueDto, type VersionDto } from "@menu-studio/shared";
+import { signPrintToken, buildDefaultSpec, type ConceptsResponse, type EditResponse, type DraftResponse,
+  type ExtractResponse, type OrgDto, type ProjectDetailDto, type UploadDto, type VenueDto, type VersionDto } from "@menu-studio/shared";
 import { connectTestDb } from "@menu-studio/server-core/testing";
 import type { Db } from "@menu-studio/server-core";
 import { PDFDocument } from "pdf-lib";
@@ -12,6 +13,28 @@ let token: string;
 let org: OrgDto;
 let venue: VenueDto;
 let project: ProjectDetailDto;
+
+const draftItem = (name: string, description: string | null = null) => ({
+  name,
+  description,
+  ingredients: [] as string[],
+  dietaryTags: [] as string[],
+  allergens: [] as string[],
+  attributes: { baseSpirit: null, glassware: null, colorHex: null, abvTier: null, flavor: null, servingTemp: null, caffeine: null },
+});
+
+const draftWire = {
+  venueType: "bar",
+  primaryLanguage: "en",
+  sections: [
+    {
+      title: "Small plates",
+      subtitle: "To share",
+      items: [draftItem("Padrón peppers", "Blistered, sea salt"), draftItem("Whipped cod roe", "Smoked roe, sourdough")],
+    },
+  ],
+  notes: ["Decide whether you want a cheese board; it needs a supplier."],
+};
 
 const extractWire = {
   venueName: "Corner Cafe",
@@ -186,6 +209,52 @@ describe("AI endpoints with a scripted model", () => {
       [2, "succeeded", "extract@1"],
     ]);
     expect(Number(usage.rows[1]?.cost_usd_micros)).toBeGreaterThan(0);
+  });
+
+it("drafts a menu from a description, with nothing priced and everything marked as a guess", async () => {
+    t.ai.push(draftWire);
+    const res = await t.request("POST", "/draft", {
+      token,
+      body: { projectId: importProject.project.id, description: "A small natural wine bar in Peckham. Snacky Mediterranean plates, about eight of them, lots of veg." },
+    });
+    expect(res.status).toBe(201);
+    const body = res.json as DraftResponse;
+    const items = body.version.document.sections.flatMap((s) => s.items);
+    expect(items.map((i) => i.name)).toEqual(["Padrón peppers", "Whipped cod roe"]);
+
+    // The two rules that make this endpoint safe.
+    expect(items.every((i) => i.price === null)).toBe(true);
+    expect(items.every((i) => i.inferredFields.includes("name") && i.inferredFields.includes("description"))).toBe(true);
+
+    expect(body.warnings.filter((w) => w.code === "missing_price")).toHaveLength(2);
+    expect(body.notes[0]).toContain("cheese board");
+    expect(t.ai.calls.at(-1)?.messages.at(-1)?.content).toEqual([expect.objectContaining({ text: expect.stringContaining("natural wine bar in Peckham") })]);
+  });
+
+  it("refuses a price the model tried to smuggle into the text", async () => {
+    const priced = structuredClone(draftWire);
+    priced.sections[0]!.items[0]!.name = "Padrón peppers £7";
+    priced.sections[0]!.items[1]!.description = "Smoked roe, sourdough — 9.50";
+    t.ai.push(priced, priced);
+    const res = await t.request("POST", "/draft", { token, body: { projectId: importProject.project.id, description: "A small natural wine bar in Peckham with snacky plates." } });
+    expect(res.status).toBe(422);
+    expect(res.json).toMatchObject({ error: { code: "ai_invalid_output" } });
+    // The retry has to tell the model what it did wrong.
+    expect(t.ai.calls.at(-1)?.messages.at(-1)?.content).toEqual([expect.objectContaining({ text: expect.stringContaining("a price appears in the name") })]);
+  });
+
+  it("asks for more detail instead of inventing a menu from nothing", async () => {
+    t.ai.push({ venueType: "restaurant", primaryLanguage: "en", sections: [], notes: [] });
+    const res = await t.request("POST", "/draft", { token, body: { projectId: importProject.project.id, description: "it is a place that serves things" } });
+    expect(res.status).toBe(201);
+    const body = res.json as DraftResponse;
+    expect(body.version.document.sections).toHaveLength(0);
+    expect(body.notes[0]).toContain("too general");
+  });
+
+  it("rejects a description too short to draft from", async () => {
+    const res = await t.request("POST", "/draft", { token, body: { projectId: importProject.project.id, description: "a cafe" } });
+    expect(res.status).toBe(400);
   });
 
   it("returns a typed, retryable error after two invalid responses", async () => {
